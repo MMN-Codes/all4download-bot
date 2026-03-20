@@ -1,16 +1,14 @@
-const youtubedl = require('yt-dlp-exec');
+const axios = require('axios');
 
-async function downloadVideo(url, fileName, quality = 'best') {
-  let format = 'best';
-
-  if (quality === '360') format = '18';
-  if (quality === '720') format = '22';
-  if (quality === 'audio') format = 'bestaudio';
-
-  await youtubedl(url, {
-    output: fileName,
-    format: format
-  });
+async function getDownloadLink(url) {
+  try {
+    const res = await axios.get(`https://api.vevioz.com/api/button/mp4?url=${encodeURIComponent(url)}`);
+    
+    return res.data;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
 }
 
-module.exports = { downloadVideo };
+module.exports = { getDownloadLink };
