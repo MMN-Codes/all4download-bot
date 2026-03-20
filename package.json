@@ -1,13 +1,13 @@
 {
   "name": "all4download-bot",
-  "version": "1.0.0",
-  "description": "Telegram Download Everything Bot",
+  "version": "2.0.0",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "telegraf": "^4.16.3",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "yt-dlp-exec": "^2.0.0"
   }
 }
