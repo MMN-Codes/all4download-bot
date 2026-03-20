@@ -1,63 +1,79 @@
-const { Telegraf } = require('telegraf');
-const { exec } = require('child_process');
-const fs = require('fs');
+const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
+const fs = require('fs');
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const bot = new Telegraf(BOT_TOKEN);
+const { downloadVideo } = require('./downloader');
+const { addUser, getUser } = require('./referral');
 
-// 🌐 Express server (for uptime)
+const bot = new Telegraf(process.env.BOT_TOKEN);
+
+// 🌐 Web server (Render keep alive)
 const app = express();
+app.get('/', (req, res) => res.send('Bot running 🚀'));
+app.listen(3000);
 
-app.get('/', (req, res) => {
-  res.send('Bot is running 🚀');
-});
-
-app.listen(3000, () => {
-  console.log('Web server running on port 3000');
-});
-
-// 🤖 Bot start
+// 🚀 START
 bot.start((ctx) => {
-  ctx.reply('🔥 Send any video link (YouTube, Insta, Twitter, Pinterest)');
+  const userId = ctx.from.id;
+  const ref = ctx.startPayload;
+
+  addUser(userId, ref);
+
+  ctx.reply(
+    `🔥 Welcome!\n\nSend any video link\n\n💰 Coins: ${getUser(userId).coins}`
+  );
 });
 
-// 📥 Handle links
+// 👤 PROFILE
+bot.command('profile', (ctx) => {
+  const user = getUser(ctx.from.id);
+
+  ctx.reply(`👤 Your Coins: ${user.coins}`);
+});
+
+// 📥 LINK HANDLE
 bot.on('text', async (ctx) => {
   const url = ctx.message.text;
 
-  if (!url.startsWith('http')) {
-    return ctx.reply('❌ Please send a valid link');
-  }
+  if (!url.startsWith('http')) return;
 
-  await ctx.reply('⏳ Downloading...');
+  ctx.reply(
+    '🎯 Select Quality:',
+    Markup.inlineKeyboard([
+      [Markup.button.callback('360p', `q_360_${url}`)],
+      [Markup.button.callback('720p', `q_720_${url}`)],
+      [Markup.button.callback('Audio', `q_audio_${url}`)]
+    ])
+  );
+});
+
+// 🎯 QUALITY HANDLER
+bot.action(/q_(.+)/, async (ctx) => {
+  const data = ctx.callbackQuery.data.split('_');
+
+  const quality = data[1];
+  const url = data.slice(2).join('_');
 
   const fileName = `video_${Date.now()}.mp4`;
 
-  const command = `yt-dlp -f mp4 -o "${fileName}" ${url}`;
+  await ctx.reply('⏳ Downloading...');
 
-  exec(command, async (error) => {
-    if (error) {
-      console.log(error);
-      return ctx.reply('❌ Download failed');
-    }
+  try {
+    await downloadVideo(url, fileName, quality);
 
-    try {
-      await ctx.replyWithVideo({ source: fileName }, {
-        caption: '✅ Downloaded via @All4DownloadBot 🚀'
-      });
+    await ctx.replyWithVideo(
+      { source: fileName },
+      { caption: '🚀 @All4DownloadBot' }
+    );
 
-      // 🧹 Delete file after sending
-      fs.unlinkSync(fileName);
-
-    } catch (err) {
-      console.log(err);
-      ctx.reply('⚠️ File too large or error sending');
-    }
-  });
+    fs.unlinkSync(fileName);
+  } catch (err) {
+    console.log(err);
+    ctx.reply('❌ Failed');
+  }
 });
 
-// 🚀 Launch bot
+// 🚀 LAUNCH
 bot.launch();
 
 console.log('Bot started...');
