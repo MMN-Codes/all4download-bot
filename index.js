@@ -25,14 +25,21 @@ bot.on('text', async (ctx) => {
 
   await ctx.reply('⏳ Fetching download link...');
 
-  const data = await getDownloadLink(url);
+  /*const data = await getDownloadLink(url);
 
   if (!data) {
     return ctx.reply('❌ Failed to fetch');
   }
 
   ctx.reply(`✅ Download here:\n${data}`);
-});
+});*/
+  const link = await getDownloadLink(url);
+
+if (!link) {
+  return ctx.reply('❌ Download failed (try another link)');
+}
+
+ctx.reply(`✅ Download:\n${link}`);
 
 // 🚀 Launch bot
 bot.launch();
