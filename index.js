@@ -1,18 +1,17 @@
 const { Telegraf } = require('telegraf');
 const express = require('express');
-
 const { getDownloadLink } = require('./downloader');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// 🌐 Web server (Render ke liye)
+// 🌐 Express server (Render ke liye)
 const app = express();
 app.get('/', (req, res) => res.send('Bot running 🚀'));
-app.listen(3000);
+app.listen(3000, () => console.log('Server running'));
 
 // 🤖 Start command
 bot.start((ctx) => {
-  ctx.reply('🔥 Send any video link (YouTube, Insta, Twitter, Pinterest)');
+  ctx.reply('🔥 Send any video link (YouTube, Insta, etc)');
 });
 
 // 📥 Link handler
@@ -25,21 +24,19 @@ bot.on('text', async (ctx) => {
 
   await ctx.reply('⏳ Fetching download link...');
 
-  /*const data = await getDownloadLink(url);
+  try {
+    const link = await getDownloadLink(url);
 
-  if (!data) {
-    return ctx.reply('❌ Failed to fetch');
+    if (!link) {
+      return ctx.reply('❌ Download failed, try another link');
+    }
+
+    await ctx.reply(`✅ Download:\n${link}`);
+  } catch (err) {
+    console.log(err);
+    ctx.reply('❌ Error occurred');
   }
-
-  ctx.reply(`✅ Download here:\n${data}`);
-});*/
-  const link = await getDownloadLink(url);
-
-if (!link) {
-  return ctx.reply('❌ Download failed (try another link)');
-}
-
-ctx.reply(`✅ Download:\n${link}`);
+});
 
 // 🚀 Launch bot
 bot.launch();
